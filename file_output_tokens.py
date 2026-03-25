@@ -1,7 +1,7 @@
 bl_info = {
     "name": "File Output Render Tokens",
     "author": "Custom",
-    "version": (2, 0, 0),
+    "version": (3, 0, 0),
     "blender": (3, 0, 0),
     "location": "Compositor > Sidebar > Render Tokens",
     "description": "Cinema 4D-style render tokens for File Output nodes (Blender 5.0 compatible)",
