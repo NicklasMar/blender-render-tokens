@@ -429,7 +429,7 @@ class TOKENS_OT_update(bpy.types.Operator):
             self.report({"INFO"}, f"Already up to date (v{'.'.join(map(str, current_ver))})")
             return {"FINISHED"}
 
-        # Write new file and reload
+        # Write new file
         addon_path = os.path.abspath(__file__)
         try:
             with open(addon_path, "w", encoding="utf-8") as f:
@@ -438,7 +438,11 @@ class TOKENS_OT_update(bpy.types.Operator):
             self.report({"ERROR"}, f"Could not write file: {e}")
             return {"CANCELLED"}
 
+        # Full reload: disable → flush module cache → re-enable
+        import sys
         bpy.ops.preferences.addon_disable(module=__name__)
+        for key in [k for k in sys.modules if k == __name__ or k.startswith(__name__ + ".")]:
+            del sys.modules[key]
         bpy.ops.preferences.addon_enable(module=__name__)
         self.report({"INFO"}, f"Updated to v{'.'.join(map(str, remote_ver))}")
         return {"FINISHED"}
