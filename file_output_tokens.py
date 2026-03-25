@@ -1,7 +1,7 @@
 bl_info = {
     "name": "File Output Render Tokens",
     "author": "Custom",
-    "version": (5, 5, 0),
+    "version": (1, 0, 0),
     "blender": (3, 0, 0),
     "location": "Compositor > Sidebar > Render Tokens",
     "description": "Cinema 4D-style render tokens for File Output nodes (Blender 5.0 compatible)",
@@ -726,7 +726,7 @@ def register():
     bpy.app.handlers.render_write.append(_on_render_write)
     bpy.app.handlers.render_post.append(_on_render_post)
     bpy.app.handlers.render_cancel.append(_on_render_cancel)
-    _log("v5.5 registered")
+    _log("v1.0.0 registered")
 
 
 def unregister():
@@ -743,7 +743,7 @@ def unregister():
             delattr(bpy.types.Scene, name)
     for cls in reversed(CLASSES):
         bpy.utils.unregister_class(cls)
-    _log("v5.5 unregistered")
+    _log("v1.0.0 unregistered")
 
 
 if __name__ == "__main__":
