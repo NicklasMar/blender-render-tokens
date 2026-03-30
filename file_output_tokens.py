@@ -1,11 +1,12 @@
 bl_info = {
     "name": "File Output Render Tokens",
-    "author": "Custom",
-    "version": (3, 0, 0),
+    "author": "Nicklas.mar",
+    "version": (1, 0, 0),
     "blender": (3, 0, 0),
-    "location": "Compositor > Sidebar > Render Tokens",
-    "description": "Cinema 4D-style render tokens for File Output nodes (Blender 5.0 compatible)",
+    "location": "Compositor > Sidebar > Render Tokens | Properties > Output",
+    "description": "Cinema 4D-style render tokens for File Output nodes and Render Output (Blender 5.0 compatible)",
     "category": "Compositing",
+    "doc_url": "https://github.com/NicklasMar/blender-render-tokens",
 }
 
 import bpy
@@ -48,7 +49,10 @@ def resolve_tokens(path, scene, pass_name="", frame=None):
 
     blend = bpy.data.filepath
     prj = os.path.splitext(os.path.basename(blend))[0] if blend else "untitled"
-    camera = scene.camera.name if scene.camera else "no_camera"
+    camera_raw = scene.camera.name if scene.camera else "no_camera"
+    camera = camera_raw[:-4] if camera_raw.endswith("_CAM") else camera_raw
+
+    version = str(getattr(scene, "render_tokens_version", 1)).zfill(3)
 
     rx = int(render.resolution_x * render.resolution_percentage / 100)
     ry = int(render.resolution_y * render.resolution_percentage / 100)
@@ -65,6 +69,11 @@ def resolve_tokens(path, scene, pass_name="", frame=None):
         "$cvComputer": computer,
         "$cvRenderer": render.engine,
         "$cvHeight":   f"{ry}p",
+        "$Author":     author,
+        "$Username":   username,
+        "$Computer":   computer,
+        "$Renderer":   render.engine,
+        "$Height":     f"{ry}p",
         "$userpass":   pass_name,
         "$camera":     camera,
         "$range":      f"{scene.frame_start}-{scene.frame_end}",
@@ -75,6 +84,7 @@ def resolve_tokens(path, scene, pass_name="", frame=None):
         "$res":        f"{rx}x{ry}",
         "$fps":        fps_str,
         "$rs":         scene.name,
+        "$version":    version,
         "$YYYY":       now.strftime("%Y"),
         "$YY":         now.strftime("%y"),
         "$MM":         now.strftime("%m"),
@@ -200,6 +210,13 @@ def _backup_and_resolve(scene):
     global _originals
     _originals.clear()
     frame = scene.frame_current
+
+    # Regular render filepath
+    orig_fp = scene.render.filepath
+    _originals["__filepath__"] = orig_fp
+    scene.render.filepath = resolve_tokens(orig_fp, scene, "", frame)
+    _log(f"render_pre — filepath resolved")
+
     nodes = list(_output_file_nodes(scene))
     _log(f"render_pre — {len(nodes)} File Output node(s), frame {frame}")
 
@@ -224,6 +241,8 @@ def _backup_and_resolve(scene):
 
 def _restore(scene):
     global _originals
+    if "__filepath__" in _originals:
+        scene.render.filepath = _originals["__filepath__"]
     for node in _output_file_nodes(scene):
         nid = node.as_pointer()
         if nid in _originals:
@@ -339,13 +358,13 @@ def _on_render_cancel(*args):
 TOKEN_GROUPS = [
     ("Project", [
         "$prj", "$camera", "$take", "$pass", "$userpass",
-        "$frame", "$rs", "$res", "$range", "$fps",
+        "$frame", "$rs", "$res", "$range", "$fps", "$version",
     ]),
     ("Date / Time", [
         "$YYYY", "$YY", "$MM", "$DD", "$hh", "$mm", "$ss",
     ]),
     ("CV", [
-        "$cvAuthor", "$cvUsername", "$cvComputer", "$cvRenderer", "$cvHeight",
+        "$Author", "$Username", "$Computer", "$Renderer", "$Height",
     ]),
 ]
 
@@ -367,11 +386,17 @@ TOKEN_DESCRIPTIONS = {
     "$hh":         "Hour (00–23)",
     "$mm":         "Minute (00–59)",
     "$ss":         "Second (00–59)",
+    "$version":    "Version number, zero-padded (001)",
     "$cvAuthor":   "Author (stamp note or OS user)",
     "$cvUsername": "OS username",
     "$cvComputer": "Computer hostname",
     "$cvRenderer": "Render engine",
     "$cvHeight":   "Render height  e.g. 1080p",
+    "$Author":     "Author (stamp note or OS user)",
+    "$Username":   "OS username",
+    "$Computer":   "Computer hostname",
+    "$Renderer":   "Render engine",
+    "$Height":     "Render height  e.g. 1080p",
 }
 
 
@@ -445,21 +470,28 @@ class TOKENS_Preferences(bpy.types.AddonPreferences):
 
     show_reference: BoolProperty(
         name="Show Token Reference",
-        default=True,
+        default=False,
     )
 
     def draw(self, context):
         layout = self.layout
 
-        # Update section
         box = layout.box()
-        row = box.row(align=True)
-        row.label(text=f"Version: {'.'.join(map(str, bl_info['version']))}", icon="INFO")
-        row.operator("render_tokens.update", icon="FILE_REFRESH")
+        col = box.column(align=True)
+
+        row = col.row(align=True)
+        row.label(text="Type: Extension")
+        row.operator("render_tokens.update", icon="FILE_REFRESH", text="")
+
+        col.label(text="Maintainer: Nicklas.mar")
+        col.label(text=f"Version: {'.'.join(map(str, bl_info['version']))}")
+
+        row = col.row()
+        op = row.operator("wm.url_open", text="Website (GitHub)", icon="URL")
+        op.url = "https://github.com/NicklasMar/blender-render-tokens"
 
         layout.separator(factor=0.5)
 
-        # Token reference
         layout.prop(self, "show_reference", toggle=True, icon="QUESTION")
         if not self.show_reference:
             return
@@ -484,7 +516,8 @@ class TOKENS_UL_presets(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon,
                   active_data, active_propname, index):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
-            layout.prop(item, "name", text="", emboss=False, icon="DOT")
+            row = layout.row(align=False)
+            row.prop(item, "name", text="", emboss=False)
         elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon="DOT")
@@ -493,6 +526,39 @@ class TOKENS_UL_presets(bpy.types.UIList):
 # ─────────────────────────────────────────────────────────────────
 # Operators
 # ─────────────────────────────────────────────────────────────────
+
+class TOKENS_OT_quick_apply(bpy.types.Operator):
+    bl_idname = "render_tokens.quick_apply"
+    bl_label = "Quick Apply"
+    bl_description = "Apply this preset to all File Output nodes"
+
+    index: IntProperty(default=0)
+
+    def execute(self, context):
+        node = context.active_node
+        if node is None or node.type != "OUTPUT_FILE":
+            self.report({"WARNING"}, "No File Output node selected")
+            return {"CANCELLED"}
+        presets = context.scene.render_tokens_presets
+        if self.index < 0 or self.index >= len(presets):
+            return {"CANCELLED"}
+        preset = presets[self.index]
+        _set_directory(node, preset.directory)
+        _set_file_name(node, preset.file_name)
+        node.name = "File Output"
+        node.label = f"View Layer {preset.name}"
+        return {"FINISHED"}
+
+
+class TOKENS_OT_select_preset(bpy.types.Operator):
+    bl_idname = "render_tokens.select_preset"
+    bl_label = "Select Preset"
+    index: IntProperty(default=0)
+
+    def execute(self, context):
+        context.scene.render_tokens_preset_index = self.index
+        return {"FINISHED"}
+
 
 class TOKENS_OT_add_preset(bpy.types.Operator):
     bl_idname = "render_tokens.add_preset"
@@ -528,6 +594,74 @@ class TOKENS_OT_preset_from_node(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class TOKENS_OT_open_folder(bpy.types.Operator):
+    bl_idname = "render_tokens.open_folder"
+    bl_label = "Open Render Folder"
+    bl_description = "Open the resolved render folder in the file manager"
+
+    path: bpy.props.StringProperty()
+
+    def execute(self, context):
+        import os
+        path = self.path
+        if not os.path.exists(path):
+            self.report({"WARNING"}, f"Folder does not exist: {path}")
+            return {"CANCELLED"}
+        bpy.ops.wm.path_open(filepath=path)
+        return {"FINISHED"}
+
+
+class TOKENS_OT_pick_dir(bpy.types.Operator):
+    bl_idname = "render_tokens.pick_dir"
+    bl_label = "Choose Directory"
+    bl_description = "Browse for a base directory"
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+    def execute(self, context):
+        context.scene.render_tokens_dir_template = self.directory
+        return {"FINISHED"}
+
+
+class TOKENS_OT_copy_token(bpy.types.Operator):
+    bl_idname = "render_tokens.copy_token"
+    bl_label = "Copy Token"
+    bl_description = "Copy token to clipboard"
+
+    token: bpy.props.StringProperty()
+
+    def execute(self, context):
+        context.window_manager.clipboard = self.token
+        self.report({"INFO"}, f"Copied: {self.token}")
+        return {"FINISHED"}
+
+
+class TOKENS_OT_version_inc(bpy.types.Operator):
+    bl_idname = "render_tokens.version_inc"
+    bl_label = "Version +"
+    bl_description = "Increment $version"
+
+    def execute(self, context):
+        context.scene.render_tokens_version += 1
+        return {"FINISHED"}
+
+
+class TOKENS_OT_version_dec(bpy.types.Operator):
+    bl_idname = "render_tokens.version_dec"
+    bl_label = "Version -"
+    bl_description = "Decrement $version"
+
+    def execute(self, context):
+        v = context.scene.render_tokens_version
+        if v > 1:
+            context.scene.render_tokens_version = v - 1
+        return {"FINISHED"}
+
+
 class TOKENS_OT_remove_preset(bpy.types.Operator):
     bl_idname = "render_tokens.remove_preset"
     bl_label = "Remove Preset"
@@ -559,6 +693,8 @@ class TOKENS_OT_apply_preset(bpy.types.Operator):
         preset = presets[idx]
         _set_directory(node, preset.directory)
         _set_file_name(node, preset.file_name)
+        node.name = "File Output"
+        node.label = f"View Layer {preset.name}"
         return {"FINISHED"}
 
 
@@ -579,39 +715,80 @@ class TOKENS_PT_panel(bpy.types.Panel):
         return sdata is not None and sdata.tree_type == "CompositorNodeTree"
 
     def draw(self, context):
-        self.layout.label(text="$tokens resolve automatically on render.", icon="INFO")
+        layout = self.layout
+        scene = context.scene
+
+        # Paths vom aktiven Node lesen
+        node = context.active_node
+        if node is not None and node.type == "OUTPUT_FILE":
+            pass_name = _get_pass_name(node)
+            resolved_dir = resolve_tokens(_get_directory(node), scene, pass_name)
+            resolved_fn  = resolve_tokens(_get_file_name(node), scene, pass_name)
+            raw_dir = _get_directory(node)
+            raw_fn  = _get_file_name(node)
+        else:
+            resolved_dir = resolved_fn = raw_dir = raw_fn = ""
+
+        # Path Preview label
+        layout.label(text="Path Preview")
+
+        # Directory
+        box = layout.box()
+        box.scale_y = 0.7
+        row = box.row(align=True)
+        row.label(text=resolved_dir if resolved_dir else "No File Output node selected")
+        row.operator("render_tokens.open_folder", text="", icon="FILE_FOLDER", emboss=False).path = resolved_dir
+
+        # File name
+        box2 = layout.box()
+        box2.scale_y = 0.7
+        box2.label(text=resolved_fn)
+
+        # Version — eigene Box
+        vbox = layout.box()
+        row = vbox.row(align=True)
+        split = row.split(factor=0.75, align=True)
+        split.label(text=f"Version: {str(scene.render_tokens_version).zfill(3)}")
+        sub = split.row(align=True)
+        sub.operator("render_tokens.version_dec", text="-")
+        sub.operator("render_tokens.version_inc", text="+")
 
 
 class TOKENS_PT_reference(bpy.types.Panel):
-    bl_label = "Token Reference"
+    bl_label = "Tokens"
     bl_idname = "TOKENS_PT_reference"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
     bl_category = "Render Tokens"
-    bl_parent_id = "TOKENS_PT_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         layout = self.layout
         for group_name, tokens in TOKEN_GROUPS:
             layout.label(text=group_name)
-            col = layout.column(align=True)
+            box = layout.box()
+            col = box.column(align=False)
             for token in tokens:
                 row = col.row(align=True)
-                row.scale_y = 0.85
-                split = row.split(factor=0.38)
+                row.scale_y = 1.0
+                split = row.split(factor=0.3, align=True)
                 split.label(text=token)
-                split.label(text=TOKEN_DESCRIPTIONS.get(token, ""))
+                desc_row = split.row(align=True)
+                desc_row.label(text=TOKEN_DESCRIPTIONS.get(token, ""))
+                sub = desc_row.row()
+                sub.alignment = "RIGHT"
+                sub.scale_x = 1.8
+                op = sub.operator("render_tokens.copy_token", text="", icon="COPYDOWN")
+                op.token = token
             layout.separator(factor=0.3)
 
 
 class TOKENS_PT_presets(bpy.types.Panel):
-    bl_label = "Presets"
+    bl_label = "Token Preset"
     bl_idname = "TOKENS_PT_presets"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
     bl_category = "Render Tokens"
-    bl_parent_id = "TOKENS_PT_panel"
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
@@ -630,14 +807,14 @@ class TOKENS_PT_presets(bpy.types.Panel):
         col.operator("render_tokens.add_preset", icon="ADD", text="")
         col.operator("render_tokens.remove_preset", icon="REMOVE", text="")
 
-        # "From Node" button
+        # Preset from Node
         if has_node:
             layout.operator("render_tokens.preset_from_node", icon="IMPORT")
 
         # Selected preset details
         if 0 <= idx < len(presets):
             preset = presets[idx]
-            layout.separator(factor=0.5)
+            layout.separator(factor=0.3)
             layout.prop(preset, "name", text="Name")
             layout.prop(preset, "directory", text="Dir")
             layout.prop(preset, "file_name", text="File")
@@ -647,38 +824,7 @@ class TOKENS_PT_presets(bpy.types.Panel):
                 layout.label(text="Select a File Output node to apply", icon="INFO")
 
 
-class TOKENS_PT_preview(bpy.types.Panel):
-    bl_label = "Live Preview"
-    bl_idname = "TOKENS_PT_preview"
-    bl_space_type = "NODE_EDITOR"
-    bl_region_type = "UI"
-    bl_category = "Render Tokens"
-    bl_parent_id = "TOKENS_PT_panel"
-    bl_options = {"DEFAULT_CLOSED"}
 
-    @classmethod
-    def poll(cls, context):
-        node = context.active_node
-        return node is not None and node.type == "OUTPUT_FILE"
-
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        node = context.active_node
-
-        raw_dir = _get_directory(node)
-        raw_fn = _get_file_name(node)
-        pass_name = _get_pass_name(node)
-
-        layout.label(text="Directory:")
-        box = layout.box()
-        box.scale_y = 0.75
-        resolved_dir = resolve_tokens(raw_dir, scene, pass_name)
-        for chunk in [resolved_dir[i:i+52] for i in range(0, max(len(resolved_dir), 1), 52)]:
-            box.label(text=chunk)
-
-        layout.label(text="File name:")
-        layout.label(text=f"  {resolve_tokens(raw_fn, scene, pass_name)}", icon="DOT")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -690,19 +836,28 @@ CLASSES = [
     TOKENS_OT_update,
     TOKENS_Preferences,
     TOKENS_UL_presets,
+    TOKENS_OT_open_folder,
+    TOKENS_OT_pick_dir,
+    TOKENS_OT_copy_token,
+    TOKENS_OT_quick_apply,
+    TOKENS_OT_select_preset,
     TOKENS_OT_add_preset,
     TOKENS_OT_preset_from_node,
+    TOKENS_OT_version_inc,
+    TOKENS_OT_version_dec,
     TOKENS_OT_remove_preset,
     TOKENS_OT_apply_preset,
     TOKENS_PT_panel,
     TOKENS_PT_reference,
     TOKENS_PT_presets,
-    TOKENS_PT_preview,
 ]
 
 _SCENE_PROPS = [
     ("render_tokens_presets",      CollectionProperty(type=TokenPreset)),
     ("render_tokens_preset_index", IntProperty(default=0)),
+    ("render_tokens_version",      IntProperty(name="$version", default=1, min=1, soft_max=999)),
+    ("render_tokens_dir_template",  bpy.props.StringProperty(name="Directory", default="//render/$prj/$version/$camera/")),
+    ("render_tokens_file_template", bpy.props.StringProperty(name="File Name", default="$camera_$pass_####")),
 ]
 
 
