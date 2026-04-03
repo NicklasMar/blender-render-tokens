@@ -1,6 +1,6 @@
 # File Output Render Tokens
 
-A Blender addon that brings dynamic render tokens to **File Output nodes** and the **render filepath**. Set up your output paths once using tokens — they resolve automatically at render time.
+A Blender addon that brings a file output token system to **File Output nodes** and the **render filepath**. Set up your output paths once using tokens — they resolve automatically at render time.
 
 ## Features
 
@@ -68,4 +68,4 @@ Go to **Edit → Preferences → Add-ons → File Output Render Tokens → Show 
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+GPL v3 — see [LICENSE](LICENSE). Any derivative work must also be released under GPL v3.
