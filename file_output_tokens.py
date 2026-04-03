@@ -1,7 +1,7 @@
 bl_info = {
     "name": "File Output Render Tokens",
     "author": "Nicklas.mar",
-    "version": (2, 0, 0),
+    "version": (1, 0, 0),
     "blender": (3, 0, 0),
     "location": "Compositor > Sidebar > Render Tokens | Properties > Output",
     "description": "Render tokens for File Output nodes and the render filepath",
@@ -667,11 +667,6 @@ class TOKENS_Preferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-
-        row = layout.row()
-        split = row.split(factor=0.15)
-        split.label(text="Loaded")
-        split.label(text=".".join(str(x) for x in bl_info["version"]))
 
         layout.operator("render_tokens.update", icon="FILE_REFRESH")
 
