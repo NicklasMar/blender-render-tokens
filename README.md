@@ -4,7 +4,7 @@ A Blender addon that brings a file output token system to **File Output nodes** 
 
 ## Installation
 
-1. Download the latest ZIP from [Releases](https://github.com/NicklasMar/blender-render-tokens/releases/latest)
+1. Download the latest ZIP from [Releases](https://github.com/NicklasMar/blender-file-output-tokens/releases/latest)
 2. Blender → **Edit → Preferences → Add-ons → Install**
 3. Select the ZIP and enable **File Output Render Tokens**
 

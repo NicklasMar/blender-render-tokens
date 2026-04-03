@@ -7,7 +7,7 @@
 # derivative work must also be released under GPL v3.
 #
 # Original author: Nicklas.mar
-# Repository: https://github.com/NicklasMar/blender-render-tokens
+# Repository: https://github.com/NicklasMar/blender-file-output-tokens
 #
 # Removing or altering this notice is prohibited.
 # ============================================================
@@ -20,7 +20,7 @@ bl_info = {
     "location": "Compositor > Sidebar > Render Tokens | Properties > Output",
     "description": "Render tokens for File Output nodes and the render filepath",
     "category": "Compositing",
-    "doc_url": "https://github.com/NicklasMar/blender-render-tokens",
+    "doc_url": "https://github.com/NicklasMar/blender-file-output-tokens",
 }
 
 import bpy
@@ -37,7 +37,7 @@ from bpy.props import (StringProperty, BoolProperty, EnumProperty,
 
 # ─── Update config (filled in after GitHub repo is created) ──────
 _GITHUB_OWNER = "NicklasMar"
-_GITHUB_REPO  = "blender-render-tokens"
+_GITHUB_REPO  = "blender-file-output-tokens"
 _GITHUB_FILE  = "file_output_tokens.py"
 _GITHUB_BRANCH = "main"
 
