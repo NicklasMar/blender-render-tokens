@@ -670,7 +670,7 @@ class TOKENS_Preferences(bpy.types.AddonPreferences):
 
         row = layout.row()
         split = row.split(factor=0.15)
-        split.label(text="Version")
+        split.label(text="Loaded")
         split.label(text=".".join(str(x) for x in bl_info["version"]))
 
         layout.operator("render_tokens.update", icon="FILE_REFRESH")
