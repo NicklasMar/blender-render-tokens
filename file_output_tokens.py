@@ -529,10 +529,10 @@ _ALIASABLE_TOKENS = [
 # ─────────────────────────────────────────────────────────────────
 
 def _on_alias_rename(self, context):
-    old = self._prev_name.strip()
+    old = self.prev_name.strip()
     new = self.custom_name.strip()
     if not old or old == new:
-        self._prev_name = new
+        self.prev_name = new
         return
     for scene in bpy.data.scenes:
         # render filepath
@@ -546,7 +546,7 @@ def _on_alias_rename(self, context):
             _set_file_name(node, _get_file_name(node).replace(old, new))
             for slot in getattr(node, "file_slots", []):
                 slot.path = slot.path.replace(old, new)
-    self._prev_name = new
+    self.prev_name = new
 
 
 class TokenAlias(bpy.types.PropertyGroup):
@@ -555,7 +555,7 @@ class TokenAlias(bpy.types.PropertyGroup):
     custom_name:  StringProperty(name="Custom Name", default="",
                                   description="Leave empty to use the default token name",
                                   update=_on_alias_rename)
-    _prev_name:   StringProperty(options={"HIDDEN"})
+    prev_name:   StringProperty(options={"HIDDEN"})
     description:  StringProperty(name="Description")
 
 
@@ -634,7 +634,7 @@ def _ensure_aliases_initialized(prefs):
             a.default_name = token
             a.description  = desc
             a.custom_name  = token
-            a._prev_name   = token
+            a.prev_name   = token
         _log("Token aliases initialized with defaults")
 
 
