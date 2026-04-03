@@ -4,6 +4,8 @@ A Blender addon that brings a file output token system to **File Output nodes** 
 
 ![UI Preview](docs/preview.png)
 
+
+
 ## Features
 
 - Live **Path Preview** in Compositor sidebar and Output Properties
@@ -50,6 +52,8 @@ A Blender addon that brings a file output token system to **File Output nodes** 
 | AOV | `//Export/$prj/$version/$camera/AOV/` | `$camera_$version_$pass_` |
 
 Custom token names: **Edit → Preferences → Add-ons → File Output Render Tokens → Show & Rename Tokens**
+
+![Rename Tokens](docs/rename_tokens.png)
 
 ## License
 
