@@ -587,13 +587,19 @@ class TOKENS_OT_update(bpy.types.Operator):
             self.report({"ERROR"}, f"Could not write file: {e}")
             return {"CANCELLED"}
 
-        # Full reload: disable → flush module cache → re-enable
+        # Defer reload via timer so operator finishes cleanly first
         import sys
-        bpy.ops.preferences.addon_disable(module=__name__)
-        for key in [k for k in sys.modules if k == __name__ or k.startswith(__name__ + ".")]:
-            del sys.modules[key]
-        bpy.ops.preferences.addon_enable(module=__name__)
-        self.report({"INFO"}, f"Updated to v{'.'.join(map(str, remote_ver))}")
+        mod_name = __name__
+
+        def _reload():
+            bpy.ops.preferences.addon_disable(module=mod_name)
+            for key in [k for k in sys.modules if k == mod_name or k.startswith(mod_name + ".")]:
+                del sys.modules[key]
+            bpy.ops.preferences.addon_enable(module=mod_name)
+            return None  # run once
+
+        bpy.app.timers.register(_reload, first_interval=0.1)
+        self.report({"INFO"}, f"Updated to v{'.'.join(map(str, remote_ver))} — reloading...")
         return {"FINISHED"}
 
 
