@@ -564,6 +564,10 @@ def _on_alias_rename(self, context):
             _set_file_name(node, _get_file_name(node).replace(old, new))
             for slot in getattr(node, "file_slots", []):
                 slot.path = slot.path.replace(old, new)
+        # Presets
+        for preset in scene.render_tokens_presets:
+            preset.directory = preset.directory.replace(old, new)
+            preset.file_name = preset.file_name.replace(old, new)
     self.prev_name = new
 
 
