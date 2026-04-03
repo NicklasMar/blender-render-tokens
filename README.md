@@ -55,6 +55,23 @@ A Blender addon that brings a file output token system to **File Output nodes** 
 | Cryptomatte | `//Export/$prj/$version/$camera/Cryptomatte/` | `$camera_$version_Cryptomatte_` |
 | AOV | `//Export/$prj/$version/$camera/AOV/` | `$camera_$version_$pass_` |
 
+### Folder Structure
+
+The presets produce the following output structure (example with project `myfilm`, version `001`, camera `MAIN`):
+
+```
+Export/
+└── myfilm/
+    └── 001/
+        └── MAIN/
+            ├── Beauty/
+            │   └── MAIN_001_Beauty_0001.exr
+            ├── Cryptomatte/
+            │   └── MAIN_001_Cryptomatte_0001.exr
+            └── AOV/
+                └── MAIN_001_Diffuse_0001.exr
+```
+
 Custom token names: **Edit → Preferences → Add-ons → File Output Render Tokens → Show & Rename Tokens**
 
 ## Credits
