@@ -281,11 +281,13 @@ def _backup_and_resolve(scene):
         _set_directory(node, new_dir)
         _set_file_name(node, new_fn)
 
-        # Also create the directory on disk
-        try:
-            os.makedirs(_to_absolute(new_dir), exist_ok=True)
-        except OSError as e:
-            _log(f"  WARNING: could not create dir '{new_dir}': {e}")
+        # Create directory only if fully resolved (no unresolved tokens left)
+        abs_dir = _to_absolute(new_dir)
+        if "$" not in abs_dir:
+            try:
+                os.makedirs(abs_dir, exist_ok=True)
+            except OSError as e:
+                _log(f"  WARNING: could not create dir '{new_dir}': {e}")
         _log(f"  '{node.name}': directory='{new_dir}'  file_name='{new_fn}'")
 
 
@@ -316,10 +318,12 @@ def _resolve_for_frame(scene, frame):
         new_fn = resolve_tokens(_originals[nid]["file_name"], scene, pass_name, frame)
         _set_directory(node, new_dir)
         _set_file_name(node, new_fn)
-        try:
-            os.makedirs(_to_absolute(new_dir), exist_ok=True)
-        except OSError as e:
-            _log(f"  WARNING: could not create dir '{new_dir}': {e}")
+        abs_dir = _to_absolute(new_dir)
+        if "$" not in abs_dir:
+            try:
+                os.makedirs(abs_dir, exist_ok=True)
+            except OSError as e:
+                _log(f"  WARNING: could not create dir '{new_dir}': {e}")
 
 
 def _rename_frame(scene, frame):
