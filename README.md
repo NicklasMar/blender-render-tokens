@@ -23,7 +23,7 @@ Custom token names: **Edit → Preferences → Add-ons → File Output Render To
 - **Version control** with one-click increment/decrement
 - **Token Presets** for fast node setup (Beauty, Cryptomatte, AOV)
 - **Rename any token** to match your studio's naming convention
-- Blender 3.0+
+- Tested in Blender 5.0.0
 
 ## Tokens
 
