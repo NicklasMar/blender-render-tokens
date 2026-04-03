@@ -2,7 +2,16 @@
 
 A Blender addon that brings a file output token system to **File Output nodes** and the **render filepath**. Set up paths once — tokens resolve automatically at render time.
 
-<img src="docs/preview.png" width="300"/> <img src="docs/rename_tokens.png" width="300"/>
+<table>
+<tr>
+<td width="300"><img src="docs/preview.png" width="300"/></td>
+<td width="300"><img src="docs/rename_tokens.png" width="300"/></td>
+</tr>
+<tr>
+<td><b>Token Panel</b> — Path Preview, Version control and Presets directly in the Compositor sidebar.</td>
+<td><b>Show & Rename Tokens</b> — Assign custom names to any token for studio pipelines.</td>
+</tr>
+</table>
 
 ## Features
 
