@@ -664,6 +664,7 @@ class TOKENS_Preferences(bpy.types.AddonPreferences):
 
         row = layout.row(align=True)
         row.operator("render_tokens.update", icon="FILE_REFRESH")
+        row.label(text="v" + ".".join(str(x) for x in bl_info["version"]))
 
         layout.separator(factor=0.5)
 
