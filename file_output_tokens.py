@@ -528,11 +528,34 @@ _ALIASABLE_TOKENS = [
 # Property Groups
 # ─────────────────────────────────────────────────────────────────
 
+def _on_alias_rename(self, context):
+    old = self._prev_name.strip()
+    new = self.custom_name.strip()
+    if not old or old == new:
+        self._prev_name = new
+        return
+    for scene in bpy.data.scenes:
+        # render filepath
+        scene.render.filepath = scene.render.filepath.replace(old, new)
+        # scene-level templates
+        scene.render_tokens_dir_template  = scene.render_tokens_dir_template.replace(old, new)
+        scene.render_tokens_file_template = scene.render_tokens_file_template.replace(old, new)
+        # File Output nodes
+        for node in _output_file_nodes(scene):
+            _set_directory(node, _get_directory(node).replace(old, new))
+            _set_file_name(node, _get_file_name(node).replace(old, new))
+            for slot in getattr(node, "file_slots", []):
+                slot.path = slot.path.replace(old, new)
+    self._prev_name = new
+
+
 class TokenAlias(bpy.types.PropertyGroup):
     """One row in the token rename table: default_name → custom_name."""
     default_name: StringProperty(name="Default Token")
     custom_name:  StringProperty(name="Custom Name", default="",
-                                  description="Leave empty to use the default token name")
+                                  description="Leave empty to use the default token name",
+                                  update=_on_alias_rename)
+    _prev_name:   StringProperty(options={"HIDDEN"})
     description:  StringProperty(name="Description")
 
 
@@ -610,7 +633,8 @@ def _ensure_aliases_initialized(prefs):
             a = prefs.token_aliases.add()
             a.default_name = token
             a.description  = desc
-            a.custom_name  = token  # editable in-place; user sees the real name
+            a.custom_name  = token
+            a._prev_name   = token
         _log("Token aliases initialized with defaults")
 
 
