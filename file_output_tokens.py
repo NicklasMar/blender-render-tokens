@@ -1134,6 +1134,7 @@ class TOKENS_PT_output_props(bpy.types.Panel):
     bl_space_type  = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context     = "output"
+    bl_order       = 0
 
     def draw(self, context):
         layout = self.layout
