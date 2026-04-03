@@ -1,7 +1,7 @@
 bl_info = {
     "name": "File Output Render Tokens",
     "author": "Nicklas.mar",
-    "version": (1, 0, 0),
+    "version": (2, 0, 0),
     "blender": (3, 0, 0),
     "location": "Compositor > Sidebar > Render Tokens | Properties > Output",
     "description": "Render tokens for File Output nodes and the render filepath",
